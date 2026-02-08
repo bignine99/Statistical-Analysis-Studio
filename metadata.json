@@ -1,0 +1,6 @@
+
+{
+  "name": "STAT-AGENT Russell v2.5",
+  "description": "건설 및 공학 데이터를 위한 전문 통계분석 에이전트. 회귀분석 및 인사이트 추출 특화.",
+  "requestFramePermissions": []
+}

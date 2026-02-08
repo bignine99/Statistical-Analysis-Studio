@@ -1,0 +1,32 @@
+{
+    "rSquared": 0.8421,
+    "adjRSquared": 0.8354,
+    "const": 10.45,
+    "factors": [
+        {
+            "factor": "Inter-Constant",
+            "impact": 10.45,
+            "pValue": 0.000
+        },
+        {
+            "factor": "Manpower_Ratio",
+            "impact": -0.052,
+            "pValue": 0.042
+        },
+        {
+            "factor": "Material_Delay_Days",
+            "impact": 0.78,
+            "pValue": 0.015
+        },
+        {
+            "factor": "Weather_Impact",
+            "impact": 14.89,
+            "pValue": 0.000
+        },
+        {
+            "factor": "Design_Changes",
+            "impact": 4.12,
+            "pValue": 0.001
+        }
+    ]
+}
