@@ -842,27 +842,39 @@ async def analyze(
         except UnicodeDecodeError:
             df = pd.read_csv(io.BytesIO(content), encoding="cp949")
 
-        # ── 전처리 (수치 데이터 자동 변환 로직 보강) ─────────────────────
+        # ── 전처리 (수치 데이터 자동 변환 로직 대폭 강화) ─────────────────────
         original_rows = len(df)
         df = df.drop_duplicates()
-        duplicates_removed = original_rows - len(df)
+        
+        # 1. 컬럼명 공백 제거 (예: ' 합계_금액 ' -> '합계_금액')
+        df.columns = [col.strip() for col in df.columns]
 
-        # 콤마(,)가 포함된 문자열 컬럼을 수치형으로 변환 시도
+        # 2. 모든 문자열 컬럼에 대해 수치 변환 시도
         for col in df.columns:
             if df[col].dtype == 'object':
-                # 문자열인 경우에만 시도
-                sample = df[col].dropna().head(10).astype(str)
-                # 숫자로 바꿀 수 있을 것 같은 패턴 (숫자, 콤마, 마침표만 있는 경우)
-                clean_sample = sample.str.replace(',', '').str.replace(' ', '').str.replace('-', '0')
-                if clean_sample.str.match(r'^-?\d*\.?\d*$').all():
-                    df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '').str.replace(' ', ''), errors='coerce')
+                # 숫자가 섞여있는지 샘플 확인
+                sample = df[col].dropna().head(20).astype(str)
+                # 숫자, 콤마, 공백, 마이너스, 점 외의 문자가 없는지 확인
+                if sample.str.contains(r'\d').any():
+                    # 수치형 변환 시도: 숫자, 마이너스, 점만 남기고 모두 제거
+                    cleaned = df[col].astype(str).str.replace(r'[^\d\.\-]', '', regex=True)
+                    # 빈 문자열이나 하이픈만 있는 경우 NaN으로 처리
+                    cleaned = cleaned.replace(['', '-'], np.nan)
+                    temp_numeric = pd.to_numeric(cleaned, errors='coerce')
+                    
+                    # 변환 결과 중 유효한 숫자가 50% 이상이면 해당 컬럼을 숫자로 확정
+                    if temp_numeric.notnull().sum() > (len(df) * 0.5):
+                        df[col] = temp_numeric
 
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
-        missing_before = int(df[numeric_cols].isnull().sum().sum())
+        # 결측치 처리 (숫자형은 중앙값, 없으면 0)
         for col in numeric_cols:
-            df[col] = df[col].fillna(df[col].median() if not df[col].empty else 0)
+            if not df[col].empty and df[col].notnull().any():
+                df[col] = df[col].fillna(df[col].median())
+            else:
+                df[col] = df[col].fillna(0)
 
         dep_var = dependent_variable
         if dep_var and dep_var not in numeric_cols:
