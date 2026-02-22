@@ -871,6 +871,9 @@ async def analyze(
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
+        # 결측치 통계 저장 (보고서용)
+        missing_before = int(df[numeric_cols].isnull().sum().sum())
+
         # 로그 출력 (디버깅용)
         print(f"Detected Numeric Columns: {numeric_cols}")
 
