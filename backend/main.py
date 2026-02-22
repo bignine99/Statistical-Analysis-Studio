@@ -843,38 +843,39 @@ async def analyze(
             df = pd.read_csv(io.BytesIO(content), encoding="cp949")
 
         # ── 전처리 (수치 데이터 자동 변환 로직 대폭 강화) ─────────────────────
-        original_rows = len(df)
-        df = df.drop_duplicates()
-        
-        # 1. 컬럼명 공백 제거 (예: ' 합계_금액 ' -> '합계_금액')
         df.columns = [col.strip() for col in df.columns]
 
-        # 2. 모든 문자열 컬럼에 대해 수치 변환 시도
-        for col in df.columns:
-            if df[col].dtype == 'object':
-                # 숫자가 섞여있는지 샘플 확인
-                sample = df[col].dropna().head(20).astype(str)
-                # 숫자, 콤마, 공백, 마이너스, 점 외의 문자가 없는지 확인
-                if sample.str.contains(r'\d').any():
-                    # 수치형 변환 시도: 숫자, 마이너스, 점만 남기고 모두 제거
-                    cleaned = df[col].astype(str).str.replace(r'[^\d\.\-]', '', regex=True)
-                    # 빈 문자열이나 하이픈만 있는 경우 NaN으로 처리
-                    cleaned = cleaned.replace(['', '-'], np.nan)
-                    temp_numeric = pd.to_numeric(cleaned, errors='coerce')
-                    
-                    # 변환 결과 중 유효한 숫자가 50% 이상이면 해당 컬럼을 숫자로 확정
-                    if temp_numeric.notnull().sum() > (len(df) * 0.5):
-                        df[col] = temp_numeric
+        # 건설 내역서 특화 수치형 강제 전환 키워드
+        numeric_keywords = ['금액', '단가', '수량', '비용', '가액', 'Price', 'Amount', 'Qty']
 
+        for col in df.columns:
+            # 1. 키워드 기반 강제 전환 또는 데이터 샘플 기반 판단
+            is_numeric_target = any(kw in col for kw in numeric_keywords)
+            
+            if df[col].dtype == 'object' or is_numeric_target:
+                # 데이터 정제: 숫자, 마이너스, 소수점만 남기고 제거
+                cleaned = df[col].astype(str).str.replace(r'[^\d\.\-]', '', regex=True)
+                cleaned = cleaned.replace(['', '-', 'None', 'nan', 'NaN'], np.nan)
+                
+                temp_numeric = pd.to_numeric(cleaned, errors='coerce')
+                
+                # 키워드가 포함되어 있거나, 유효 숫자가 30% 이상이면 숫자로 확정
+                if is_numeric_target or (temp_numeric.notnull().sum() > (len(df) * 0.3)):
+                    df[col] = temp_numeric
+
+        # 최종 수치형/범주형 분류
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
-        # 결측치 처리 (숫자형은 중앙값, 없으면 0)
+        # 로그 출력 (디버깅용)
+        print(f"Detected Numeric Columns: {numeric_cols}")
+
+        if len(numeric_cols) < 2:
+            return {"error": f"분석을 위해 최소 2개의 수치형 컬럼이 필요합니다. (인식된 수치 컬럼: {len(numeric_cols)}개 - {', '.join(numeric_cols)})"}
+
+        # 결측치 처리
         for col in numeric_cols:
-            if not df[col].empty and df[col].notnull().any():
-                df[col] = df[col].fillna(df[col].median())
-            else:
-                df[col] = df[col].fillna(0)
+            df[col] = df[col].fillna(0)
 
         dep_var = dependent_variable
         if dep_var and dep_var not in numeric_cols:
