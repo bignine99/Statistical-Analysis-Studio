@@ -843,6 +843,10 @@ async def analyze(
             df = pd.read_csv(io.BytesIO(content), encoding="cp949")
 
         # ── 전처리 (수치 데이터 자동 변환 로직 대폭 강화) ─────────────────────
+        original_rows = len(df)
+        df = df.drop_duplicates()
+        duplicates_removed = original_rows - len(df)
+        
         df.columns = [col.strip() for col in df.columns]
 
         # 건설 내역서 특화 수치형 강제 전환 키워드
