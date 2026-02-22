@@ -5,7 +5,7 @@
 
 import { Dataset, StatisticalInsight } from "../types";
 
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = "/stat/api";
 
 /**
  * CSV 데이터를 Python 백엔드로 전송하여 실제 통계 분석을 수행한다.

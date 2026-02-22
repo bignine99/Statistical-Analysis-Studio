@@ -842,17 +842,27 @@ async def analyze(
         except UnicodeDecodeError:
             df = pd.read_csv(io.BytesIO(content), encoding="cp949")
 
-        # ── 전처리 ──────────────────────────────────────────────
+        # ── 전처리 (수치 데이터 자동 변환 로직 보강) ─────────────────────
         original_rows = len(df)
         df = df.drop_duplicates()
         duplicates_removed = original_rows - len(df)
+
+        # 콤마(,)가 포함된 문자열 컬럼을 수치형으로 변환 시도
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                # 문자열인 경우에만 시도
+                sample = df[col].dropna().head(10).astype(str)
+                # 숫자로 바꿀 수 있을 것 같은 패턴 (숫자, 콤마, 마침표만 있는 경우)
+                clean_sample = sample.str.replace(',', '').str.replace(' ', '').str.replace('-', '0')
+                if clean_sample.str.match(r'^-?\d*\.?\d*$').all():
+                    df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '').str.replace(' ', ''), errors='coerce')
 
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
         missing_before = int(df[numeric_cols].isnull().sum().sum())
         for col in numeric_cols:
-            df[col] = df[col].fillna(df[col].median())
+            df[col] = df[col].fillna(df[col].median() if not df[col].empty else 0)
 
         dep_var = dependent_variable
         if dep_var and dep_var not in numeric_cols:
@@ -1660,4 +1670,4 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

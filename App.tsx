@@ -53,7 +53,8 @@ import {
   Play
 } from 'lucide-react';
 
-const DEFAULT_API_KEY = 'AIzaSyCVfNJqCKiSz0Er4Xhcmuhnj1q2eD7E2kk';
+
+const DEFAULT_API_KEY = process.env.GEMINI_API_KEY || '';
 const AUTH_PASSWORD = '0172';
 
 const LandingPage: React.FC<{ onStart: (apiKey: string) => void }> = ({ onStart }) => {
@@ -260,8 +261,8 @@ const LandingPage: React.FC<{ onStart: (apiKey: string) => void }> = ({ onStart 
                 <button
                   onClick={() => { setAuthMode('password'); setInputValue(''); setAuthError(''); }}
                   className={`flex-1 text-xs font-medium py-2 rounded transition-all flex items-center justify-center gap-1.5 ${authMode === 'password'
-                      ? 'bg-white text-academic-700 shadow-sm border border-academic-200'
-                      : 'text-ink-400 hover:text-ink-600'
+                    ? 'bg-white text-academic-700 shadow-sm border border-academic-200'
+                    : 'text-ink-400 hover:text-ink-600'
                     }`}
                 >
                   <Lock size={12} /> 비밀번호
@@ -269,8 +270,8 @@ const LandingPage: React.FC<{ onStart: (apiKey: string) => void }> = ({ onStart 
                 <button
                   onClick={() => { setAuthMode('apikey'); setInputValue(''); setAuthError(''); }}
                   className={`flex-1 text-xs font-medium py-2 rounded transition-all flex items-center justify-center gap-1.5 ${authMode === 'apikey'
-                      ? 'bg-white text-academic-700 shadow-sm border border-academic-200'
-                      : 'text-ink-400 hover:text-ink-600'
+                    ? 'bg-white text-academic-700 shadow-sm border border-academic-200'
+                    : 'text-ink-400 hover:text-ink-600'
                     }`}
                 >
                   <Key size={12} /> Gemini API 키
@@ -874,8 +875,8 @@ const App: React.FC = () => {
                       onClick={() => state.dataset && startAnalysis(state.dataset, state.dependentVariable)}
                       disabled={state.isExploring}
                       className={`mt-3 w-full text-white py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${state.insights.length > 0
-                          ? 'bg-academic-800 hover:bg-academic-900'
-                          : 'bg-academic-700 hover:bg-academic-800 shadow-md animate-pulse-subtle'
+                        ? 'bg-academic-800 hover:bg-academic-900'
+                        : 'bg-academic-700 hover:bg-academic-800 shadow-md animate-pulse-subtle'
                         }`}
                     >
                       {state.isExploring ? (

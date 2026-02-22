@@ -54,7 +54,7 @@ cd Statistical-Analysis-Studio
 ```bash
 # .env.local 파일 생성 (이 파일은 git에 포함되어 있지 않음)
 cat > .env.local << 'EOF'
-GEMINI_API_KEY=AIzaSyCVfNJqCKiSz0Er4Xhcmuhnj1q2eD7E2kk
+GEMINI_API_KEY=여기에_새로운_API_키를_입력하세요
 EOF
 ```
 
